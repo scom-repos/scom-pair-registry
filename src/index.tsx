@@ -10,6 +10,7 @@ import { isClientWalletConnected, State } from './store';
 import configData from './data.json';
 import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { tokenStore } from '@scom/scom-token-list';
+import { doRegisterPair, getPair, getWETH, isPairRegistered } from './api';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -45,6 +46,7 @@ export default class ScomPairRegistry extends Module {
         networks: []
     };
     tag: any = {};
+    private isReadyToRegister: boolean = false;
 
     private get chainId() {
         return this.state.getChainId();
@@ -53,7 +55,7 @@ export default class ScomPairRegistry extends Module {
     get defaultChainId() {
         return this._data.defaultChainId;
     }
-    
+
     set defaultChainId(value: number) {
         this._data.defaultChainId = value;
     }
@@ -65,7 +67,7 @@ export default class ScomPairRegistry extends Module {
     set wallets(value: IWalletPlugin[]) {
         this._data.wallets = value;
     }
-    
+
     get networks() {
         return this._data.networks ?? [];
     }
@@ -93,12 +95,12 @@ export default class ScomPairRegistry extends Module {
     }
 
     onHide() {
-      this.dappContainer.onHide();
-      this.removeRpcWalletEvents();
+        this.dappContainer.onHide();
+        this.removeRpcWalletEvents();
     }
 
     isEmptyData(value: IPairRegistry) {
-      return !value || !value.networks || value.networks.length === 0;
+        return !value || !value.networks || value.networks.length === 0;
     }
 
     async init() {
@@ -178,6 +180,7 @@ export default class ScomPairRegistry extends Module {
         const chainChangedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.ChainChanged, async (chainId: number) => {
             this.fromTokenInput.token = null;
             this.toTokenInput.token = null;
+            this.lblRegisterPairMsg.visible = false;
             // this.fromTokenInput.tokenReadOnly = true;
             // this.toTokenInput.tokenReadOnly = true;
             // this.pairs = await getGroupQueuePairs(this.state);
@@ -224,7 +227,7 @@ export default class ScomPairRegistry extends Module {
                 this.btnRegister.enabled = true;
             } else {
                 this.btnRegister.caption = "Register";
-                this.btnRegister.enabled = false;
+                this.btnRegister.enabled = this.isReadyToRegister;
             }
             this.fromTokenInput.chainId = chainId;
             this.toTokenInput.chainId = chainId;
@@ -262,9 +265,49 @@ export default class ScomPairRegistry extends Module {
         }
     }
 
-    private onSelectFromToken() {}
+    private onSelectFromToken() {
+        this.handleSelectToken(true);
+    }
 
-    private onSelectToToken() {}
+    private onSelectToToken() {
+        this.handleSelectToken(false);
+    }
+
+    private async handleSelectToken(isFrom: boolean) {
+        this.isReadyToRegister = false;
+        if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
+        let fromToken = (this.fromTokenInput.token?.address || this.fromTokenInput.token?.symbol)?.toLowerCase();
+        let toToken = (this.toTokenInput.token?.address || this.toTokenInput.token?.symbol)?.toLowerCase();
+        if (fromToken === toToken) {
+            if (isFrom) {
+                this.toTokenInput.token = null;
+            } else {
+                this.fromTokenInput.token = null;
+            }
+            return;
+        }
+        this.fromTokenInput.tokenReadOnly = true;
+        this.toTokenInput.tokenReadOnly = true;
+        let pairAddress = await getPair(this.state, this.fromTokenInput.token, this.toTokenInput.token);
+        if (!pairAddress) {
+            this.lblRegisterPairMsg.caption = 'Pair has not been created yet.';
+            this.lblRegisterPairMsg.visible = true;
+        } else {
+            let isRegistered = await isPairRegistered(this.state, pairAddress);
+            if (isRegistered) {
+                this.lblRegisterPairMsg.caption = 'This pair is already registered on Hybrid Router Registry.';
+                this.lblRegisterPairMsg.visible = true;
+            } else {
+                this.lblRegisterPairMsg.visible = false;
+                this.isReadyToRegister = true;
+            }
+        }
+        this.fromTokenInput.tokenReadOnly = false;
+        this.toTokenInput.tokenReadOnly = false;
+        if (isClientWalletConnected() && this.state.isRpcWalletConnected()) {
+            this.btnRegister.enabled = this.isReadyToRegister;
+        }
+    }
 
     private async onRegisterPair() {
         try {
@@ -273,8 +316,42 @@ export default class ScomPairRegistry extends Module {
                 return;
             }
             if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
+
+            this.showResultMessage('warning', 'Registering');
+            this.fromTokenInput.tokenReadOnly = true;
+            this.toTokenInput.tokenReadOnly = true;
+            this.btnRegister.rightIcon.spin = true;
+            this.btnRegister.rightIcon.visible = true;
+            
+            const txHashCallback = async (err: Error, receipt?: string) => {
+                if (err) {
+                    this.showResultMessage('error', err);
+                } else if (receipt) {
+                    this.showResultMessage('success', receipt);
+                }
+            }
+    
+            const confirmationCallback = async (receipt: any) => {
+                this.refreshUI();
+            };
+    
+            const wallet = Wallet.getClientInstance();
+            wallet.registerSendTxEvents({
+                transactionHash: txHashCallback,
+                confirmation: confirmationCallback
+            });
+            
+            const WETH9 = getWETH(this.chainId);
+            const fromToken = this.fromTokenInput.token.address ? this.fromTokenInput.token.address : WETH9.address || this.fromTokenInput.token.address;
+            const toToken = this.toTokenInput.token.address ? this.toTokenInput.token.address : WETH9.address || this.toTokenInput.token.address;
+            await doRegisterPair(this.state, fromToken, toToken);
         } catch (err) {
             console.error(err);
+        } finally {
+            this.fromTokenInput.tokenReadOnly = false;
+            this.toTokenInput.tokenReadOnly = false;
+            this.btnRegister.rightIcon.spin = false;
+            this.btnRegister.rightIcon.visible = false;
         }
     }
 
