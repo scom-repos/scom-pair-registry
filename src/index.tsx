@@ -7,6 +7,7 @@ import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
 import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 import { IPairRegistry } from './interface';
 import { isClientWalletConnected, State } from './store';
+import formSchema from './formSchema';
 import configData from './data.json';
 import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { tokenStore } from '@scom/scom-token-list';
@@ -128,13 +129,110 @@ export default class ScomPairRegistry extends Module {
     }
 
     private _getActions(category?: string) {
+        const actions: any[] = [];
+        if (category && category !== 'offers') {
+            actions.push({
+                name: 'Edit',
+                icon: 'edit',
+                command: (builder: any, userInputData: any) => {
+                    let oldData: IPairRegistry = {
+                        wallets: [],
+                        networks: []
+                    };
+                    let oldTag = {};
+                    return {
+                        execute: () => {
+                            oldData = JSON.parse(JSON.stringify(this._data));
+                            const { networks } = userInputData;
+                            const themeSettings = {};
+                            this._data.networks = networks;
+                            this._data.defaultChainId = this._data.networks[0].chainId;
+                            this.resetRpcWallet();
+                            this.refreshUI();
+                            if (builder?.setData) builder.setData(this._data);
+
+                            oldTag = JSON.parse(JSON.stringify(this.tag));
+                            if (builder?.setTag) builder.setTag(themeSettings);
+                            else this.setTag(themeSettings);
+                            if (this.dappContainer) this.dappContainer.setTag(themeSettings);
+                        },
+                        undo: () => {
+                            this._data = JSON.parse(JSON.stringify(oldData));
+                            this.refreshUI();
+                            if (builder?.setData) builder.setData(this._data);
+
+                            this.tag = JSON.parse(JSON.stringify(oldTag));
+                            if (builder?.setTag) builder.setTag(this.tag);
+                            else this.setTag(this.tag);
+                            if (this.dappContainer) this.dappContainer.setTag(this.tag);
+                        },
+                        redo: () => {}
+                    }
+                },
+                userInputDataSchema: formSchema.dataSchema,
+                userInputUISchema: formSchema.uiSchema,
+                customControls: formSchema.customControls()
+            })
+        }
+        return actions;
     }
 
     private getProjectOwnerActions() {
+        const actions: any[] = [
+            {
+                name: 'Settings',
+                userInputDataSchema: formSchema.dataSchema,
+                userInputUISchema: formSchema.uiSchema,
+                customControls: formSchema.customControls()
+            }
+        ]
+        return actions;
     }
 
     getConfigurators() {
-        return [];
+        return [
+            {
+                name: 'Project Owner Configurator',
+                target: 'Project Owner',
+                getActions: this.getProjectOwnerActions,
+                getData: this.getData.bind(this),
+                setData: async (data: any) => {
+                    await this.setData(data);
+                },
+                getTag: this.getTag.bind(this),
+                setTag: this.setTag.bind(this)
+            },
+            {
+                name: 'Builder Configurator',
+                target: 'Builders',
+                getActions: this._getActions.bind(this),
+                getData: this.getData.bind(this),
+                setData: async (data: any) => {
+                    const defaultData = configData.defaultBuilderData;
+                    await this.setData({  ...defaultData, ...data });
+                },
+                getTag: this.getTag.bind(this),
+                setTag: this.setTag.bind(this)
+            },
+            {
+                name: 'Embedder Configurator',
+                target: 'Embedders',
+                getData: () => {
+                    return { ...this._data }
+                },
+                setData: async (properties: IPairRegistry, linkParams?: Record<string, any>) => {
+                    let resultingData = {
+                        ...properties
+                    };
+                    if (!properties.defaultChainId && properties.networks?.length) {
+                        resultingData.defaultChainId = properties.networks[0].chainId;
+                    }
+                    await this.setData(resultingData);
+                },
+                getTag: this.getTag.bind(this),
+                setTag: this.setTag.bind(this)
+            }
+        ];
     }
 
     private getData() {
@@ -181,11 +279,6 @@ export default class ScomPairRegistry extends Module {
             this.fromTokenInput.token = null;
             this.toTokenInput.token = null;
             this.lblRegisterPairMsg.visible = false;
-            // this.fromTokenInput.tokenReadOnly = true;
-            // this.toTokenInput.tokenReadOnly = true;
-            // this.pairs = await getGroupQueuePairs(this.state);
-            // this.fromTokenInput.tokenReadOnly = false;
-            // this.toTokenInput.tokenReadOnly = false;
             this.refreshUI();
         });
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
