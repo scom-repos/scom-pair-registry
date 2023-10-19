@@ -57,9 +57,54 @@ declare module "@scom/scom-pair-registry/store/index.ts" {
     export * from "@scom/scom-pair-registry/store/utils.ts";
     export * from "@scom/scom-pair-registry/store/core.ts";
 }
+/// <amd-module name="@scom/scom-pair-registry/formSchema.ts" />
+declare module "@scom/scom-pair-registry/formSchema.ts" {
+    import ScomNetworkPicker from '@scom/scom-network-picker';
+    const _default_1: {
+        dataSchema: {
+            type: string;
+            properties: {
+                networks: {
+                    type: string;
+                    required: boolean;
+                    items: {
+                        type: string;
+                        properties: {
+                            chainId: {
+                                type: string;
+                                enum: number[];
+                                required: boolean;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        uiSchema: {
+            type: string;
+            elements: {
+                type: string;
+                scope: string;
+                options: {
+                    detail: {
+                        type: string;
+                    };
+                };
+            }[];
+        };
+        customControls(): {
+            '#/properties/networks/properties/chainId': {
+                render: () => ScomNetworkPicker;
+                getData: (control: ScomNetworkPicker) => number;
+                setData: (control: ScomNetworkPicker, value: number) => void;
+            };
+        };
+    };
+    export default _default_1;
+}
 /// <amd-module name="@scom/scom-pair-registry/data.json.ts" />
 declare module "@scom/scom-pair-registry/data.json.ts" {
-    const _default_1: {
+    const _default_2: {
         defaultBuilderData: {
             defaultChainId: number;
             networks: {
@@ -70,7 +115,7 @@ declare module "@scom/scom-pair-registry/data.json.ts" {
             }[];
         };
     };
-    export default _default_1;
+    export default _default_2;
 }
 /// <amd-module name="@scom/scom-pair-registry/api.ts" />
 declare module "@scom/scom-pair-registry/api.ts" {
@@ -130,7 +175,30 @@ declare module "@scom/scom-pair-registry" {
         init(): Promise<void>;
         private _getActions;
         private getProjectOwnerActions;
-        getConfigurators(): any[];
+        getConfigurators(): ({
+            name: string;
+            target: string;
+            getActions: any;
+            getData: any;
+            setData: (data: any) => Promise<void>;
+            getTag: any;
+            setTag: any;
+        } | {
+            name: string;
+            target: string;
+            getData: () => {
+                wallets: IWalletPlugin[];
+                networks: INetworkConfig[];
+                defaultChainId?: number;
+                showHeader?: boolean;
+                fromToken?: string;
+                toToken?: string;
+            };
+            setData: (properties: IPairRegistry, linkParams?: Record<string, any>) => Promise<void>;
+            getTag: any;
+            setTag: any;
+            getActions?: undefined;
+        })[];
         private getData;
         private setData;
         getTag(): Promise<any>;

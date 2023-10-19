@@ -165,6 +165,66 @@ define("@scom/scom-pair-registry/store/index.ts", ["require", "exports", "@scom/
     __exportStar(utils_1, exports);
     __exportStar(core_2, exports);
 });
+define("@scom/scom-pair-registry/formSchema.ts", ["require", "exports", "@scom/scom-network-picker"], function (require, exports, scom_network_picker_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const chainIds = [1, 56, 137, 250, 97, 80001, 43113, 43114, 42161, 421613];
+    const networks = chainIds.map(v => { return { chainId: v }; });
+    exports.default = {
+        dataSchema: {
+            type: 'object',
+            properties: {
+                networks: {
+                    type: 'array',
+                    required: true,
+                    items: {
+                        type: 'object',
+                        properties: {
+                            chainId: {
+                                type: 'number',
+                                enum: chainIds,
+                                required: true
+                            }
+                        }
+                    }
+                },
+            }
+        },
+        uiSchema: {
+            type: 'VerticalLayout',
+            elements: [
+                {
+                    type: 'Control',
+                    scope: '#/properties/networks',
+                    options: {
+                        detail: {
+                            type: 'VerticalLayout'
+                        }
+                    }
+                }
+            ]
+        },
+        customControls() {
+            return {
+                '#/properties/networks/properties/chainId': {
+                    render: () => {
+                        const networkPicker = new scom_network_picker_1.default(undefined, {
+                            type: 'combobox',
+                            networks
+                        });
+                        return networkPicker;
+                    },
+                    getData: (control) => {
+                        return control.selectedNetwork?.chainId;
+                    },
+                    setData: (control, value) => {
+                        control.setNetworkByChainId(value);
+                    }
+                }
+            };
+        }
+    };
+});
 define("@scom/scom-pair-registry/data.json.ts", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -275,7 +335,7 @@ define("@scom/scom-pair-registry/api.ts", ["require", "exports", "@scom/oswap-op
     }
     exports.isPairRegistered = isPairRegistered;
 });
-define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components", "@scom/scom-pair-registry/assets.ts", "@scom/scom-pair-registry/store/index.ts", "@scom/scom-pair-registry/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-pair-registry/api.ts"], function (require, exports, components_3, assets_1, store_2, data_json_1, eth_wallet_2, scom_token_list_2, api_1) {
+define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components", "@scom/scom-pair-registry/assets.ts", "@scom/scom-pair-registry/store/index.ts", "@scom/scom-pair-registry/formSchema.ts", "@scom/scom-pair-registry/data.json.ts", "@ijstech/eth-wallet", "@scom/scom-token-list", "@scom/scom-pair-registry/api.ts"], function (require, exports, components_3, assets_1, store_2, formSchema_1, data_json_1, eth_wallet_2, scom_token_list_2, api_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_3.Styles.Theme.ThemeVars;
@@ -414,11 +474,114 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
             this.executeReadyCallback();
         }
         _getActions(category) {
+            const actions = [];
+            if (category && category !== 'offers') {
+                actions.push({
+                    name: 'Edit',
+                    icon: 'edit',
+                    command: (builder, userInputData) => {
+                        let oldData = {
+                            wallets: [],
+                            networks: []
+                        };
+                        let oldTag = {};
+                        return {
+                            execute: () => {
+                                oldData = JSON.parse(JSON.stringify(this._data));
+                                const { networks } = userInputData;
+                                const themeSettings = {};
+                                this._data.networks = networks;
+                                this._data.defaultChainId = this._data.networks[0].chainId;
+                                this.resetRpcWallet();
+                                this.refreshUI();
+                                if (builder?.setData)
+                                    builder.setData(this._data);
+                                oldTag = JSON.parse(JSON.stringify(this.tag));
+                                if (builder?.setTag)
+                                    builder.setTag(themeSettings);
+                                else
+                                    this.setTag(themeSettings);
+                                if (this.dappContainer)
+                                    this.dappContainer.setTag(themeSettings);
+                            },
+                            undo: () => {
+                                this._data = JSON.parse(JSON.stringify(oldData));
+                                this.refreshUI();
+                                if (builder?.setData)
+                                    builder.setData(this._data);
+                                this.tag = JSON.parse(JSON.stringify(oldTag));
+                                if (builder?.setTag)
+                                    builder.setTag(this.tag);
+                                else
+                                    this.setTag(this.tag);
+                                if (this.dappContainer)
+                                    this.dappContainer.setTag(this.tag);
+                            },
+                            redo: () => { }
+                        };
+                    },
+                    userInputDataSchema: formSchema_1.default.dataSchema,
+                    userInputUISchema: formSchema_1.default.uiSchema,
+                    customControls: formSchema_1.default.customControls()
+                });
+            }
+            return actions;
         }
         getProjectOwnerActions() {
+            const actions = [
+                {
+                    name: 'Settings',
+                    userInputDataSchema: formSchema_1.default.dataSchema,
+                    userInputUISchema: formSchema_1.default.uiSchema,
+                    customControls: formSchema_1.default.customControls()
+                }
+            ];
+            return actions;
         }
         getConfigurators() {
-            return [];
+            return [
+                {
+                    name: 'Project Owner Configurator',
+                    target: 'Project Owner',
+                    getActions: this.getProjectOwnerActions,
+                    getData: this.getData.bind(this),
+                    setData: async (data) => {
+                        await this.setData(data);
+                    },
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
+                },
+                {
+                    name: 'Builder Configurator',
+                    target: 'Builders',
+                    getActions: this._getActions.bind(this),
+                    getData: this.getData.bind(this),
+                    setData: async (data) => {
+                        const defaultData = data_json_1.default.defaultBuilderData;
+                        await this.setData({ ...defaultData, ...data });
+                    },
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
+                },
+                {
+                    name: 'Embedder Configurator',
+                    target: 'Embedders',
+                    getData: () => {
+                        return { ...this._data };
+                    },
+                    setData: async (properties, linkParams) => {
+                        let resultingData = {
+                            ...properties
+                        };
+                        if (!properties.defaultChainId && properties.networks?.length) {
+                            resultingData.defaultChainId = properties.networks[0].chainId;
+                        }
+                        await this.setData(resultingData);
+                    },
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
+                }
+            ];
         }
         getData() {
             return this._data;
@@ -459,11 +622,6 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                 this.fromTokenInput.token = null;
                 this.toTokenInput.token = null;
                 this.lblRegisterPairMsg.visible = false;
-                // this.fromTokenInput.tokenReadOnly = true;
-                // this.toTokenInput.tokenReadOnly = true;
-                // this.pairs = await getGroupQueuePairs(this.state);
-                // this.fromTokenInput.tokenReadOnly = false;
-                // this.toTokenInput.tokenReadOnly = false;
                 this.refreshUI();
             });
             const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_2.Constants.RpcWalletEvent.Connected, async (connected) => {
