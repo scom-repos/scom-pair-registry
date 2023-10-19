@@ -193,7 +193,7 @@ export default class ScomPairRegistry extends Module {
         return [
             {
                 name: 'Project Owner Configurator',
-                target: 'Project Owner',
+                target: 'Project Owners',
                 getActions: this.getProjectOwnerActions,
                 getData: this.getData.bind(this),
                 setData: async (data: any) => {
