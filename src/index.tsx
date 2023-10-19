@@ -75,7 +75,7 @@ export default class ScomPairRegistry extends Module {
     }
 
     get showHeader() {
-        return this._data.showHeader ?? false;
+        return this._data.showHeader ?? true;
     }
 
     set showHeader(value: boolean) {
@@ -280,7 +280,7 @@ export default class ScomPairRegistry extends Module {
 
     render() {
         return (
-            <i-scom-dapp-container id="dapp-container">
+            <i-scom-dapp-container id="dappContainer">
                 <i-panel background={{ color: Theme.background.main }}>
                     <i-panel>
                         <i-vstack id="pnlLoading" class="i-loading-overlay">
@@ -307,7 +307,6 @@ export default class ScomPairRegistry extends Module {
                                     <i-scom-token-input
                                         id="fromTokenInput"
                                         type="combobox"
-                                        width={160}
                                         isBalanceShown={false}
                                         isBtnMaxShown={false}
                                         isInputShown={false}
@@ -318,7 +317,6 @@ export default class ScomPairRegistry extends Module {
                                     <i-scom-token-input
                                         id="toTokenInput"
                                         type="combobox"
-                                        width={160}
                                         isBalanceShown={false}
                                         isBtnMaxShown={false}
                                         isInputShown={false}
