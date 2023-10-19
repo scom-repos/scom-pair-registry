@@ -1,4 +1,5 @@
 # scom-pair-registry
+Register pair by calling OSWAP_HybridRouterRegistry.registerPairByTokensV3()
 
 ## Step 1: Install packages
 ```sh
