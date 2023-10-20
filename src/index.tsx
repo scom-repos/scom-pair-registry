@@ -328,6 +328,11 @@ export default class ScomPairRegistry extends Module {
             const tokens = tokenStore.getTokenList(chainId);
             this.fromTokenInput.tokenDataListProp = tokens;
             this.toTokenInput.tokenDataListProp = tokens;
+            if (this._data.isFlow) {
+                if (this._data.fromToken) this.fromTokenInput.address = this._data.fromToken;
+                if (this._data.toToken) this.toTokenInput.address = this._data.toToken;
+                this.handleSelectToken(true);
+            }
         })
     }
 

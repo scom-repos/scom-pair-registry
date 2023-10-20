@@ -183,8 +183,8 @@ export default class ScomPairRegistryFlowInitialSetup extends Module {
     private async handleClickStart() {
         if (!this.fromTokenInput.token || !this.toTokenInput.token) return;
         this.executionProperties.isFlow = true;
-        this.executionProperties.fromToken = this.fromTokenInput.token;
-        this.executionProperties.toToken = this.toTokenInput.token;
+        this.executionProperties.fromToken = this.fromTokenInput.token.address || this.fromTokenInput.token.symbol;
+        this.executionProperties.toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
         if (this.state.handleNextFlowStep) {
             this.state.handleNextFlowStep({
                 tokenRequirements: this.tokenRequirements,

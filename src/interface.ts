@@ -8,4 +8,5 @@ export interface IPairRegistry {
     showHeader?: boolean;
     fromToken?: string;
     toToken?: string;
+    isFlow?: boolean;
 }

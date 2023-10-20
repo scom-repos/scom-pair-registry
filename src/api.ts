@@ -48,7 +48,7 @@ export async function getPair(state: State, tokenA: ITokenObject, tokenB: IToken
         let groupQ = new Contracts.OSWAP_RestrictedFactory(wallet, factoryAddress);
         pairAddress = await groupQ.getPair({ ...params, param3: 0 });
     } catch (err) {
-        console.error(err);
+        // console.error(err);
     }
     return pairAddress;
 }

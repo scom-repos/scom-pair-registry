@@ -20,6 +20,7 @@ declare module "@scom/scom-pair-registry/interface.ts" {
         showHeader?: boolean;
         fromToken?: string;
         toToken?: string;
+        isFlow?: boolean;
     }
 }
 /// <amd-module name="@scom/scom-pair-registry/store/core.ts" />
@@ -245,6 +246,7 @@ declare module "@scom/scom-pair-registry" {
                 showHeader?: boolean;
                 fromToken?: string;
                 toToken?: string;
+                isFlow?: boolean;
             };
             setData: (properties: IPairRegistry, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;

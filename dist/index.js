@@ -313,7 +313,7 @@ define("@scom/scom-pair-registry/api.ts", ["require", "exports", "@scom/oswap-op
             pairAddress = await groupQ.getPair({ ...params, param3: 0 });
         }
         catch (err) {
-            console.error(err);
+            // console.error(err);
         }
         return pairAddress;
     }
@@ -474,8 +474,8 @@ define("@scom/scom-pair-registry/flow/initialSetup.tsx", ["require", "exports", 
             if (!this.fromTokenInput.token || !this.toTokenInput.token)
                 return;
             this.executionProperties.isFlow = true;
-            this.executionProperties.fromToken = this.fromTokenInput.token;
-            this.executionProperties.toToken = this.toTokenInput.token;
+            this.executionProperties.fromToken = this.fromTokenInput.token.address || this.fromTokenInput.token.symbol;
+            this.executionProperties.toToken = this.toTokenInput.token.address || this.toTokenInput.token.symbol;
             if (this.state.handleNextFlowStep) {
                 this.state.handleNextFlowStep({
                     tokenRequirements: this.tokenRequirements,
@@ -592,6 +592,13 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                     const tokens = scom_token_list_3.tokenStore.getTokenList(chainId);
                     this.fromTokenInput.tokenDataListProp = tokens;
                     this.toTokenInput.tokenDataListProp = tokens;
+                    if (this._data.isFlow) {
+                        if (this._data.fromToken)
+                            this.fromTokenInput.address = this._data.fromToken;
+                        if (this._data.toToken)
+                            this.toTokenInput.address = this._data.toToken;
+                        this.handleSelectToken(true);
+                    }
                 });
             };
             this.showResultMessage = (status, content) => {
