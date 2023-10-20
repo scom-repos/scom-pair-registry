@@ -129,9 +129,58 @@ declare module "@scom/scom-pair-registry/api.ts" {
     export function getPair(state: State, tokenA: ITokenObject, tokenB: ITokenObject): Promise<string>;
     export function isPairRegistered(state: State, pairAddress: string): Promise<boolean>;
 }
+/// <amd-module name="@scom/scom-pair-registry/flow/initialSetup.tsx" />
+declare module "@scom/scom-pair-registry/flow/initialSetup.tsx" {
+    import { Control, ControlElement, Module } from "@ijstech/components";
+    import { State } from "@scom/scom-pair-registry/store/index.ts";
+    interface ScomPairRegistryFlowInitialSetupElement extends ControlElement {
+        data?: any;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-pair-registry-flow-initial-setup']: ScomPairRegistryFlowInitialSetupElement;
+            }
+        }
+    }
+    export default class ScomPairRegistryFlowInitialSetup extends Module {
+        private lblConnectedStatus;
+        private btnConnectWallet;
+        private fromTokenInput;
+        private toTokenInput;
+        private lblRegisterPairMsg;
+        private btnStart;
+        private mdWallet;
+        private _state;
+        private tokenRequirements;
+        private executionProperties;
+        private walletEvents;
+        get state(): State;
+        set state(value: State);
+        private get rpcWallet();
+        private get chainId();
+        private resetRpcWallet;
+        setData(value: any): Promise<void>;
+        private initWallet;
+        private initializeWidgetConfig;
+        connectWallet(): Promise<void>;
+        private updateConnectStatus;
+        private registerEvents;
+        onHide(): void;
+        init(): void;
+        private onSelectFromToken;
+        private onSelectToToken;
+        private handleSelectToken;
+        private handleClickStart;
+        render(): any;
+        handleFlowStage(target: Control, stage: string, options: any): Promise<{
+            widget: ScomPairRegistryFlowInitialSetup;
+        }>;
+    }
+}
 /// <amd-module name="@scom/scom-pair-registry" />
 declare module "@scom/scom-pair-registry" {
-    import { Container, ControlElement, Module } from '@ijstech/components';
+    import { Container, Control, ControlElement, Module } from '@ijstech/components';
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
     import { IPairRegistry } from "@scom/scom-pair-registry/interface.ts";
@@ -218,5 +267,8 @@ declare module "@scom/scom-pair-registry" {
         private handleSelectToken;
         private onRegisterPair;
         render(): any;
+        handleFlowStage(target: Control, stage: string, options: any): Promise<{
+            widget: any;
+        }>;
     }
 }

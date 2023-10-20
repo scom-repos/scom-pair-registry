@@ -10,7 +10,7 @@ import {
     Styles
 } from "@ijstech/components";
 import { Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
-import { getPair, isPairRegistered } from "@scom-pair-registry/api";
+import { getPair, isPairRegistered } from "../api";
 import ScomTokenInput from "@scom/scom-token-input";
 import { ITokenObject, tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
