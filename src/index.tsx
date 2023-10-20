@@ -12,6 +12,7 @@ import configData from './data.json';
 import { Constants, Wallet } from '@ijstech/eth-wallet';
 import { tokenStore } from '@scom/scom-token-list';
 import { doRegisterPair, getPair, getWETH, isPairRegistered } from './api';
+import ScomPairRegistryFlowInitialSetup from './flow/initialSetup';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -517,5 +518,33 @@ export default class ScomPairRegistry extends Module {
                 </i-panel>
             </i-scom-dapp-container>
         )
+    }
+
+    async handleFlowStage(target: Control, stage: string, options: any) {
+        let widget;
+        if (stage === 'initialSetup') {
+            widget = new ScomPairRegistryFlowInitialSetup();
+            target.appendChild(widget);
+            await widget.ready();
+            widget.state = this.state;
+            await widget.handleFlowStage(target, stage, options);
+        } else {
+            widget = this;
+            if (!options.isWidgetConnected) {
+                target.appendChild(widget);
+                await widget.ready();
+            }
+            let properties = options.properties;
+            let tag = options.tag;
+            this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
+            await this.setData(properties);
+            if (tag) {
+                this.setTag(tag);
+            }
+        }
+        
+        return { widget };
     }
 }

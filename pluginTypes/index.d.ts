@@ -41,6 +41,9 @@ declare module "@scom/scom-pair-registry/store/utils.ts" {
             [key: number]: INetwork;
         };
         rpcWalletId: string;
+        handleNextFlowStep: (data: any) => Promise<void>;
+        handleAddTransactions: (data: any) => Promise<void>;
+        handleJumpToStep: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
         initRpcWallet(defaultChainId: number): string;
