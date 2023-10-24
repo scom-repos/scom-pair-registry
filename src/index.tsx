@@ -409,6 +409,7 @@ export default class ScomPairRegistry extends Module {
     }
 
     private async onRegisterPair() {
+        const wallet = Wallet.getClientInstance();
         try {
             if (!this.state.isRpcWalletConnected()) {
                 this.connectWallet();
@@ -432,9 +433,9 @@ export default class ScomPairRegistry extends Module {
     
             const confirmationCallback = async (receipt: any) => {
                 this.refreshUI();
+                wallet.registerSendTxEvents({});
             };
     
-            const wallet = Wallet.getClientInstance();
             wallet.registerSendTxEvents({
                 transactionHash: txHashCallback,
                 confirmation: confirmationCallback
@@ -446,6 +447,8 @@ export default class ScomPairRegistry extends Module {
             await doRegisterPair(this.state, fromToken, toToken);
         } catch (err) {
             console.error(err);
+            this.showResultMessage('error', '');
+            wallet.registerSendTxEvents({});
         } finally {
             this.fromTokenInput.tokenReadOnly = false;
             this.toTokenInput.tokenReadOnly = false;

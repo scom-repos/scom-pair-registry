@@ -879,6 +879,7 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
             }
         }
         async onRegisterPair() {
+            const wallet = eth_wallet_3.Wallet.getClientInstance();
             try {
                 if (!this.state.isRpcWalletConnected()) {
                     this.connectWallet();
@@ -901,8 +902,8 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                 };
                 const confirmationCallback = async (receipt) => {
                     this.refreshUI();
+                    wallet.registerSendTxEvents({});
                 };
-                const wallet = eth_wallet_3.Wallet.getClientInstance();
                 wallet.registerSendTxEvents({
                     transactionHash: txHashCallback,
                     confirmation: confirmationCallback
@@ -914,6 +915,8 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
             }
             catch (err) {
                 console.error(err);
+                this.showResultMessage('error', '');
+                wallet.registerSendTxEvents({});
             }
             finally {
                 this.fromTokenInput.tokenReadOnly = false;
