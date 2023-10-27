@@ -422,6 +422,7 @@ export default class ScomPairRegistry extends Module {
             this.toTokenInput.tokenReadOnly = true;
             this.btnRegister.rightIcon.spin = true;
             this.btnRegister.rightIcon.visible = true;
+            const chainId = this.chainId;
             
             const txHashCallback = async (err: Error, receipt?: string) => {
                 if (err) {
@@ -432,7 +433,43 @@ export default class ScomPairRegistry extends Module {
             }
     
             const confirmationCallback = async (receipt: any) => {
-                this.refreshUI();
+                if (this.state.handleUpdateStepStatus) {
+                    this.state.handleUpdateStepStatus({
+                        status: "Completed",
+                        color: Theme.colors.success.main,
+                        message: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
+                    });
+                }
+                if (this.state.handleAddTransactions) {
+                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                    const transactionsInfoArr = [
+                        {
+                            desc: 'Register Pair',
+                            chainId: chainId,
+                            fromToken: null,
+                            toToken: null,
+                            fromTokenAmount: '',
+                            toTokenAmount: '-',
+                            hash: receipt.transactionHash,
+                            timestamp,
+                            value: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
+                        }
+                    ];
+                    this.state.handleAddTransactions({
+                        list: transactionsInfoArr
+                    });
+                }
+                if (this.state.handleJumpToStep) {
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-liquidity-provider',
+                        executionProperties: {
+                            tokenIn: fromToken,
+                            tokenOut: toToken,
+                            isCreate: true,
+                            isFlow: true
+                        }
+                    })
+                }
                 wallet.registerSendTxEvents({});
             };
     
