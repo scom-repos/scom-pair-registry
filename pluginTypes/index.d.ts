@@ -1,6 +1,7 @@
 /// <reference path="@scom/scom-dapp-container/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-contract/index.d.ts" />
+/// <reference path="@scom/scom-token-list/index.d.ts" />
 /// <amd-module name="@scom/scom-pair-registry/assets.ts" />
 declare module "@scom/scom-pair-registry/assets.ts" {
     function fullPath(path: string): string;
@@ -12,6 +13,7 @@ declare module "@scom/scom-pair-registry/assets.ts" {
 /// <amd-module name="@scom/scom-pair-registry/interface.ts" />
 declare module "@scom/scom-pair-registry/interface.ts" {
     import { INetworkConfig } from "@scom/scom-network-picker";
+    import { ITokenObject } from "@scom/scom-token-list";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
     export interface IPairRegistry {
         wallets: IWalletPlugin[];
@@ -20,6 +22,7 @@ declare module "@scom/scom-pair-registry/interface.ts" {
         showHeader?: boolean;
         fromToken?: string;
         toToken?: string;
+        customTokens?: Record<number, ITokenObject[]>;
         isFlow?: boolean;
     }
 }
@@ -45,6 +48,7 @@ declare module "@scom/scom-pair-registry/store/utils.ts" {
         handleNextFlowStep: (data: any) => Promise<void>;
         handleAddTransactions: (data: any) => Promise<void>;
         handleJumpToStep: (data: any) => Promise<void>;
+        handleUpdateStepStatus: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
         initRpcWallet(defaultChainId: number): string;
@@ -246,6 +250,7 @@ declare module "@scom/scom-pair-registry" {
                 showHeader?: boolean;
                 fromToken?: string;
                 toToken?: string;
+                customTokens?: Record<number, import("@scom/scom-token-list").ITokenObject[]>;
                 isFlow?: boolean;
             };
             setData: (properties: IPairRegistry, linkParams?: Record<string, any>) => Promise<void>;

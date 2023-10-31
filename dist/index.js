@@ -590,13 +590,19 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                     this.fromTokenInput.chainId = chainId;
                     this.toTokenInput.chainId = chainId;
                     const tokens = scom_token_list_3.tokenStore.getTokenList(chainId);
-                    this.fromTokenInput.tokenDataListProp = tokens;
-                    this.toTokenInput.tokenDataListProp = tokens;
+                    const customTokens = this._data.customTokens[this.chainId] ?? [];
+                    const tokenList = [...tokens, ...customTokens];
+                    this.fromTokenInput.tokenDataListProp = tokenList;
+                    this.toTokenInput.tokenDataListProp = tokenList;
                     if (this._data.isFlow) {
-                        if (this._data.fromToken)
-                            this.fromTokenInput.address = this._data.fromToken;
-                        if (this._data.toToken)
-                            this.toTokenInput.address = this._data.toToken;
+                        if (this._data.fromToken) {
+                            const fromToken = this._data.fromToken.toLowerCase();
+                            this.fromTokenInput.token = tokenList.find(t => t.symbol.toLowerCase() === fromToken || t.address?.toLowerCase() === fromToken);
+                        }
+                        if (this._data.toToken) {
+                            const toToken = this._data.toToken.toLowerCase();
+                            this.toTokenInput.token = tokenList.find(t => t.symbol.toLowerCase() === toToken || t.address?.toLowerCase() === toToken);
+                        }
                         this.handleSelectToken(true);
                     }
                 });
@@ -892,6 +898,7 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                 this.toTokenInput.tokenReadOnly = true;
                 this.btnRegister.rightIcon.spin = true;
                 this.btnRegister.rightIcon.visible = true;
+                const chainId = this.chainId;
                 const txHashCallback = async (err, receipt) => {
                     if (err) {
                         this.showResultMessage('error', err);
@@ -901,7 +908,44 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                     }
                 };
                 const confirmationCallback = async (receipt) => {
-                    this.refreshUI();
+                    if (this.state.handleUpdateStepStatus) {
+                        this.state.handleUpdateStepStatus({
+                            status: "Completed",
+                            color: Theme.colors.success.main,
+                            message: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
+                        });
+                    }
+                    if (this.state.handleAddTransactions) {
+                        const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                        const transactionsInfoArr = [
+                            {
+                                desc: 'Register Pair',
+                                chainId: chainId,
+                                fromToken: null,
+                                toToken: null,
+                                fromTokenAmount: '',
+                                toTokenAmount: '-',
+                                hash: receipt.transactionHash,
+                                timestamp,
+                                value: `${this.fromTokenInput.token.symbol}/${this.toTokenInput.token.symbol}`
+                            }
+                        ];
+                        this.state.handleAddTransactions({
+                            list: transactionsInfoArr
+                        });
+                    }
+                    if (this.state.handleJumpToStep) {
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-liquidity-provider',
+                            executionProperties: {
+                                tokenIn: fromToken,
+                                tokenOut: toToken,
+                                customTokens: this._data.customTokens,
+                                isCreate: true,
+                                isFlow: true
+                            }
+                        });
+                    }
                     wallet.registerSendTxEvents({});
                 };
                 wallet.registerSendTxEvents({
