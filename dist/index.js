@@ -590,7 +590,7 @@ define("@scom/scom-pair-registry", ["require", "exports", "@ijstech/components",
                     this.fromTokenInput.chainId = chainId;
                     this.toTokenInput.chainId = chainId;
                     const tokens = scom_token_list_3.tokenStore.getTokenList(chainId);
-                    const customTokens = this._data.customTokens[this.chainId] ?? [];
+                    const customTokens = this._data.customTokens?.[this.chainId] ?? [];
                     const tokenList = [...tokens, ...customTokens];
                     this.fromTokenInput.tokenDataListProp = tokenList;
                     this.toTokenInput.tokenDataListProp = tokenList;
